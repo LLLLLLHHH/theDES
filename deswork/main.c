@@ -409,6 +409,7 @@ int cal_differ_DES(char *meshex,char *mes2) {
 void get_randm(int *randm) {
 	int i,j;
 	int ra;
+	srand((int)time(NULL));
 	for (i = 0;i < 64;i++) {
 		ra = rand() % 64+1;
 		for (j = 0;j < i;j++) {
@@ -424,13 +425,14 @@ void printf_cal(int *cal) {
 	int i,j;
 	printf("  ");
 	for (i = 0;i <= 64;i++) {
-		if (cal[i] == 0) {
+		if (cal[i] != 0)printf("\n");
 			printf("  %d : %d ", i, cal[i]);
-		}else printf("\n  %d : %d ", i, cal[i]);
+		
 	for (j = 0;j < cal[i]/10;j++) {
 			printf("*");
 		}
 	}
+	printf("\n");
 }
 
 void change_mes(char* mes,int* cal,char* key) {
@@ -449,7 +451,7 @@ void change_mes(char* mes,int* cal,char* key) {
 			get_randm(randm);
 			ByteToBit(mess, mes, 64);
 			for (j = 0;j < i;j++) {
-				mess[randm[(k + j) % 64]] = !mess[randm[(k + j) % 64]];
+				mess[randm[(k+j) % 64]] = !mess[randm[(k+j) % 64]];
 			}
 			BitToByte(mes, mess, 64);
 			PlayDes(mes2, mes);   // 执行DES加密
@@ -500,7 +502,7 @@ int canzhaofx(int chose) {
 	char MyKey[8] = { 0 };           // 初始密钥 8字节*8
 	char MyMessage[8] = { 0 };       // 初始明文 
 
-
+	getchar();
 	printf("输入加密信息(64 bit):\n");
 	gets(MyMessage);            // 明文
 	printf("输入8位密钥:\n");
