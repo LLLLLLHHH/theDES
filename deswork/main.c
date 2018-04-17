@@ -4,6 +4,7 @@ Data Encryption Standard  56位密钥加密64位数据
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 #include "bool.h"   // 位处理 
 #include "tables.h"
 
@@ -299,17 +300,18 @@ void printfdiff(diffop* op) {
 	for (i=0;i < 16;i++) {
 		pointer = &op[i];
 		IntToBit(i, temp, 4);
-		printf("\n	");
+		printf("\n\t");
 		for (j = 0;j < 4;j++) {
 			printf("%d", temp[j]);
-		}printf("   	->  	");
+		}printf("   	->  	");j = 0;
 		while (pointer != NULL) {
 			if (pointer->num != -1) {
 				IntToBit(pointer->lie, temp, 4);IntToBit(pointer->hang, hang, 2);
 				printf("%d%d%d%d%d%d   ", hang[0], temp[0], temp[1], temp[2], temp[3], hang[1]);
+				j++;
 			}
 			pointer = pointer->next;
-		}
+		}printf(" %d", j);
 	}
 }
 
@@ -375,19 +377,164 @@ void differcal(int cha,int sbox) {
 
 }
 
-int main() {
-	
+int chafenfx() {
 	int cha;
 	int sbno;
 	printf("输入差分值(0-63) ：");
 	scanf("%d", &cha);
-	
-	printf("输入s盒值 ：(1-8)");
+
+	printf("输入s盒值(1-8) ：");
 	scanf("%d", &sbno);
 
-	differcal(cha, sbno-1);
+	differcal(cha, sbno - 1);
 
 	getchar();
 	getchar();
+	return 0;
+}
+
+int cal_differ_DES(char *meshex,char *mes2) {
+	int i;
+	int j = 0;
+	bool bedes[64] = { 0 };
+	bool afdes[64] = { 0 };
+	HexToBit(bedes,mes2 , 64);
+	HexToBit(afdes,meshex , 64);
+	for (i = 0;i < 64;i++) {
+		if (bedes[i] != afdes[i])j += 1;
+	}
+	return j;
+}
+
+void get_randm(int *randm) {
+	int i,j;
+	int ra;
+	for (i = 0;i < 64;i++) {
+		ra = rand() % 64+1;
+		for (j = 0;j < i;j++) {
+			if (randm[j] == ra) {
+				ra = rand() % 64 + 1;
+				j = 0;
+			}
+		}randm[i] = ra;
+	}
+}
+
+void printf_cal(int *cal) {
+	int i,j;
+	printf("  ");
+	for (i = 0;i <= 64;i++) {
+		if (cal[i] == 0) {
+			printf("  %d : %d ", i, cal[i]);
+		}else printf("\n  %d : %d ", i, cal[i]);
+	for (j = 0;j < cal[i]/10;j++) {
+			printf("*");
+		}
+	}
+}
+
+void change_mes(char* mes,int* cal,char* key) {
+	int i, j;int k;
+	int randm[64] = { 0 };
+	bool mess[64] = { 0 };
+	char MesHex[16] = { 0 };
+	char mes2[16] = { 0 };
+	
+	
+	SetKey(key);               // 设置密钥 得到子密钥Ki
+	PlayDes(MesHex, mes);
+
+	for(i = 1;i <= 64;i++) {
+		for (k = 0;k < 10000;k++) {
+			get_randm(randm);
+			ByteToBit(mess, mes, 64);
+			for (j = 0;j < i;j++) {
+				mess[randm[(k + j) % 64]] = !mess[randm[(k + j) % 64]];
+			}
+			BitToByte(mes, mess, 64);
+			PlayDes(mes2, mes);   // 执行DES加密
+			cal[cal_differ_DES(MesHex, mes2)] += 1;
+		}
+		printf("\n 改变 %d 位：", i);
+		printf_cal(cal);
+		for (j = 0;j <= 64;j++)cal[j] = 0;
+	}
+	
+	
+}
+
+void change_key(char* mes, int* cal, char* key) {
+	int i, j;int k;
+	int randm[64] = { 0 };
+	bool mess[64] = { 0 };
+	char MesHex[16] = { 0 };
+	char mes2[16] = { 0 };
+
+
+	SetKey(key);               // 设置密钥 得到子密钥Ki
+	PlayDes(MesHex, mes);
+
+	for (i = 1;i <= 64;i++) {
+		for (k = 0;k < 10000;k++) {
+			get_randm(randm);
+			ByteToBit(mess, key, 64);
+			for (j = 0;j < i;j++) {
+				mess[randm[(k + j) % 64]] = !mess[randm[(k + j) % 64]];
+			}
+			BitToByte(key, mess, 64);
+			SetKey(key);
+			PlayDes(mes2, mes);   // 执行DES加密
+			cal[cal_differ_DES(MesHex, mes2)] += 1;
+		}
+		printf("\n 改变 %d 位：", i);
+		printf_cal(cal);
+		for (j = 0;j <= 64;j++)cal[j] = 0;
+	}
+
+}
+
+int canzhaofx(int chose) {
+	int i = 0;
+	int caldif[65] = { 0 };
+	char MesHex[16] = { 0 };         // 16个字符数组用于存放 64位16进制的密文
+	char MyKey[8] = { 0 };           // 初始密钥 8字节*8
+	char MyMessage[8] = { 0 };       // 初始明文 
+
+
+	printf("输入加密信息(64 bit):\n");
+	gets(MyMessage);            // 明文
+	printf("输入8位密钥:\n");
+	gets(MyKey);                // 密钥
+
+	while (MyKey[i] != '\0'){   // 计算密钥长度
+		i++;
+	}
+	while (i != 8){ // 不是8 提示错误
+		printf("密钥长度错误!\n");
+		gets(MyKey);
+		i = 0;
+		while (MyKey[i] != '\0'){ // 再次检测
+			i++;
+		}
+	}
+	if (chose == 2)change_mes(MyMessage, caldif, MyKey);
+	else change_key(MyMessage, caldif, MyKey);
+
+	return 0;
+}
+
+int main() {
+	int chose = -1;
+	while (chose != 0) {
+		printf("1:差分分析 \n2:密钥不变分析\n3:明文不变分析\n0:exit\n");
+		scanf("%d", &chose);
+		if (chose == 1) {
+			chafenfx();
+		}
+		else if (chose == 2 || chose == 3) {
+			canzhaofx(chose);
+		}
+	}
+	getchar();getchar();
 	return 0;
 }
