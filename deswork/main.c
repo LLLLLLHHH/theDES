@@ -428,7 +428,7 @@ void printf_cal(int *cal) {
 		if (cal[i] != 0)printf("\n");
 			printf("  %d : %d ", i, cal[i]);
 		
-	for (j = 0;j < cal[i]/10;j++) {
+	for (j = 0;j < cal[i]/20;j++) {
 			printf("*");
 		}
 	}
